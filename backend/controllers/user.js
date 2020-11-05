@@ -1,13 +1,23 @@
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const User = require('../models/User');
 
+//Algorithme de cryptage email
+const algorithm = 'aes256';
+//Clé de chiffrement
+const password = 'l5JmP+G0/1zB%;r8B8?2?2pcqGcL^3';
+
 exports.signup = (req, res, next) => {
+  const cipher = crypto.createCipher(algorithm,password);
+  let crypted = cipher.update(req.body.email,'utf8','hex');
+  crypted += cipher.final('hex');
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       const user = new User({
-        email: req.body.email,
+        email: crypted,
         password: hash
       });
       user.save()
@@ -18,7 +28,10 @@ exports.signup = (req, res, next) => {
 };
 
 exports.login = (req, res, next) => {
-  User.findOne({ email: req.body.email })
+  const cipher = crypto.createCipher(algorithm,password);
+  let crypted = cipher.update(req.body.email,'utf8','hex');
+  crypted += cipher.final('hex');
+  User.findOne({ email: crypted })
     .then(user => {
       if (!user) {
         return res.status(401).json({ error: 'Utilisateur non trouvé !' });
